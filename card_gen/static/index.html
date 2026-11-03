@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Карточка товара</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --text: #1d2330; --muted: #677085; --line: #dfe3ea;
+    --accent: #1f5fd1; --accent-text: #ffffff; --ok: #1d7a46; --warn: #a86500; --bad: #b3261e;
+    --ok-bg: #e5f4ea; --warn-bg: #fdf1dc; --bad-bg: #fbe5e3; --code: #f0f2f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --panel: #1c2027; --text: #e6e9ef; --muted: #98a1b3; --line: #2e343e;
+      --accent: #6d9cf0; --accent-text: #0d1117; --ok: #6cc690; --warn: #e5b45c; --bad: #f08a80;
+      --ok-bg: #18301f; --warn-bg: #352a14; --bad-bg: #3a1c1a; --code: #242932;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 20px 16px 8px; max-width: 1280px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px; padding: 16px; max-width: 1280px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  h3 { font-size: 14px; margin: 18px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  input, textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); font: inherit; }
+  textarea { resize: vertical; min-height: 90px; }
+  textarea.mono, pre { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 8px; flex-wrap: wrap; }
+  .tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; color: var(--muted); cursor: pointer; font: inherit; }
+  .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+  .btn { border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 8px 14px; border-radius: 8px; cursor: pointer; font: inherit; }
+  .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .btn:disabled { opacity: .55; cursor: progress; }
+  .btn.small { padding: 3px 9px; font-size: 13px; }
+  .hint { color: var(--muted); font-size: 13px; }
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+  .badge.ready { background: var(--ok-bg); color: var(--ok); }
+  .badge.needs_data { background: var(--warn-bg); color: var(--warn); }
+  .badge.needs_review, .badge.error { background: var(--bad-bg); color: var(--bad); }
+  .field-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 18px; }
+  .field-head h3 { margin: 0; }
+  .count.bad { color: var(--bad); font-weight: 600; }
+  .text { white-space: pre-wrap; background: var(--code); border-radius: 8px; padding: 10px 12px; margin-top: 6px; overflow-wrap: anywhere; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { border-bottom: 1px solid var(--line); padding: 6px 4px; vertical-align: top; overflow-wrap: anywhere; }
+  td:first-child { color: var(--muted); width: 45%; }
+  .missing { color: var(--bad); font-weight: 600; }
+  .src { color: var(--warn); font-size: 12px; }
+  ul { margin: 4px 0 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  pre { background: var(--code); border-radius: 8px; padding: 12px; overflow: auto; max-height: 520px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .issues li b { font-weight: 600; }
+  .empty { color: var(--muted); padding: 30px 0; text-align: center; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Черновик карточки товара</h1>
+  <p class="hint">Заполните поля или вставьте JSON. Технические значения в карточке берутся только из введённых данных.</p>
+</header>
+<main>
+  <section aria-labelledby="in-title">
+    <h2 id="in-title">Данные о приборе</h2>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-mode="form">Поля</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="json">JSON</button>
+    </div>
+
+    <div id="mode-form">
+      <label for="f-name">Название *</label>
+      <input id="f-name" placeholder="Манометр показывающий ТМ-510Р">
+      <label for="f-manufacturer">Производитель</label>
+      <input id="f-manufacturer" placeholder="РОСМА">
+      <label for="f-category">Вид прибора (необязательно)</label>
+      <input id="f-category" placeholder="манометр показывающий">
+      <label for="f-specs">Характеристики: по одной в строке, «название: значение»</label>
+      <textarea id="f-specs" class="mono" rows="7" placeholder="Диапазон измерений: 0–1,6 МПа&#10;Класс точности: 1,5"></textarea>
+      <label for="f-description">Описание</label>
+      <textarea id="f-description" rows="7"></textarea>
+    </div>
+
+    <div id="mode-json" hidden>
+      <label for="f-json">JSON с полями name, manufacturer, specs, description</label>
+      <textarea id="f-json" class="mono" rows="22" spellcheck="false"></textarea>
+    </div>
+
+    <div class="row">
+      <button class="btn primary" id="btn-generate">Сформировать карточку</button>
+      <button class="btn" id="btn-check">Проверить данные</button>
+    </div>
+    <div class="row" id="examples-row" hidden>
+      <span class="hint">Примеры:</span>
+    </div>
+  </section>
+
+  <section aria-labelledby="out-title" aria-live="polite">
+    <h2 id="out-title">Результат</h2>
+    <div id="out-empty" class="empty">Здесь появится карточка</div>
+    <div id="out" hidden></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let mode = "form";
+let last = null;
+
+document.querySelectorAll(".tab[data-mode]").forEach((tab) => tab.addEventListener("click", () => setMode(tab.dataset.mode)));
+
+function setMode(next) {
+  if (next === mode) return;
+  if (next === "json") $("f-json").value = JSON.stringify(collectForm(), null, 2);
+  else fillForm(safeParse($("f-json").value) || {});
+  mode = next;
+  document.querySelectorAll(".tab[data-mode]").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.mode === mode)));
+  $("mode-form").hidden = mode !== "form";
+  $("mode-json").hidden = mode !== "json";
+}
+
+function safeParse(text) { try { return JSON.parse(text); } catch { return null; } }
+
+function collectForm() {
+  const specs = {};
+  $("f-specs").value.split("\n").forEach((line) => {
+    const i = line.indexOf(":");
+    if (i > 0) specs[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+  });
+  const data = { name: $("f-name").value.trim(), manufacturer: $("f-manufacturer").value.trim(), specs, description: $("f-description").value.trim() };
+  if ($("f-category").value.trim()) data.category = $("f-category").value.trim();
+  return data;
+}
+
+function fillForm(d) {
+  $("f-name").value = d.name || "";
+  $("f-manufacturer").value = d.manufacturer || d.vendor || "";
+  $("f-category").value = d.category || "";
+  const specs = d.specs && typeof d.specs === "object" && !Array.isArray(d.specs) ? d.specs : {};
+  $("f-specs").value = Object.entries(specs).map(([k, v]) => `${k}: ${v ?? ""}`).join("\n");
+  $("f-description").value = d.description || "";
+}
+
+function payload() { return mode === "json" ? $("f-json").value : JSON.stringify(collectForm()); }
+
+async function call(path) {
+  const buttons = [$("btn-generate"), $("btn-check")];
+  buttons.forEach((b) => (b.disabled = true));
+  const label = $("btn-generate").textContent;
+  if (path === "/api/card") $("btn-generate").textContent = "Модель пишет черновик…";
+  try {
+    const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload() });
+    const body = await res.json().catch(() => ({ error: `Сервер ответил ${res.status}` }));
+    if (!res.ok) return showError(body);
+    path === "/api/card" ? showCard(body) : showCheck(body.issues);
+  } catch (e) {
+    showError({ error: "Сервер недоступен: " + e.message });
+  } finally {
+    buttons.forEach((b) => (b.disabled = false));
+    $("btn-generate").textContent = label;
+  }
+}
+$("btn-generate").addEventListener("click", () => call("/api/card"));
+$("btn-check").addEventListener("click", () => call("/api/check"));
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const list = (items) => items && items.length ? `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>` : `<p class="hint">данных нет</p>`;
+const issuesHtml = (issues) => `<ul class="issues">${issues.map((i) => `<li><b>${esc(i.field)}</b>: ${esc(i.message)}${i.source === "модель" ? ' <span class="hint">(замечание модели)</span>' : ""}</li>`).join("")}</ul>`;
+
+function render(html) { $("out-empty").hidden = true; $("out").hidden = false; $("out").innerHTML = html; }
+
+function showError(body) {
+  render(`<span class="badge error">Ошибка</span><p>${esc(body.error || "Неизвестная ошибка")}</p>${body.issues ? issuesHtml(body.issues) : ""}`);
+}
+
+function showCheck(issues) {
+  render(`<span class="badge ${issues.length ? "needs_data" : "ready"}">${issues.length ? "Есть замечания" : "Замечаний нет"}</span>${issues.length ? "<h3>Что уточнить</h3>" + issuesHtml(issues) : ""}`);
+}
+
+const STATUS = { ready: "Готово к вычитке", needs_data: "Нужны данные", needs_review: "Нужна правка" };
+const SRC = { name: "из названия", description: "из описания" };
+
+function copyBlock(title, key, text, counter) {
+  return `<div class="field-head"><h3>${title}</h3><span>${counter || ""} <button class="btn small" data-copy="${key}">Копировать</button></span></div><div class="text">${esc(text)}</div>`;
+}
+
+function showCard({ card, markdown }) {
+  last = { card, markdown, json: JSON.stringify(card, null, 2), title: card.seo_title, description: card.seo_description };
+  const tl = card.seo_title.length, dl = card.seo_description.length;
+  const specs = card.key_specs.map((s) => `<tr><td>${esc(s.name)}</td><td>${s.source === "missing" ? `<span class="missing">${esc(s.value)}</span>` : esc(s.value)}${SRC[s.source] ? ` <span class="src">${SRC[s.source]}</span>` : ""}</td></tr>`).join("");
+  render(`
+    <span class="badge ${card.status}">${STATUS[card.status]}</span>
+    ${copyBlock("SEO-заголовок", "title", card.seo_title, `<span class="count ${tl > 70 ? "bad" : ""}">${tl}/70</span>`)}
+    ${copyBlock("SEO-описание", "description", card.seo_description, `<span class="count ${dl < 800 || dl > 1200 ? "bad" : ""}">${dl} симв.</span>`)}
+    <h3>Ключевые характеристики</h3><table>${specs}</table>
+    <h3>Поисковые запросы</h3>${list(card.search_queries)}
+    <h3>Кому подходит</h3>${list(card.commercial.who_fits)}
+    <h3>Какие задачи решает</h3>${list(card.commercial.tasks)}
+    <h3>Аргументы для клиента</h3>${list(card.commercial.arguments)}
+    ${card.data_issues.length ? "<h3>Что уточнить</h3>" + issuesHtml(card.data_issues) : ""}
+    ${card.warnings.length ? "<h3>Проверка</h3>" + list(card.warnings) : ""}
+    <div class="tabs" role="tablist" style="margin-top:20px">
+      <button class="tab" role="tab" aria-selected="true" data-view="markdown">Markdown</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="json">JSON</button>
+    </div>
+    <div class="row" style="margin-top:0"><button class="btn small" data-copy="view">Копировать всё</button></div>
+    <pre id="view">${esc(markdown)}</pre>
+    <p class="hint">Модель: ${esc(card.model)}, попыток генерации: ${card.attempts}</p>`);
+  let view = "markdown";
+  $("out").querySelectorAll("[data-view]").forEach((t) => t.addEventListener("click", () => {
+    view = t.dataset.view;
+    $("out").querySelectorAll("[data-view]").forEach((x) => x.setAttribute("aria-selected", String(x === t)));
+    $("view").textContent = view === "json" ? last.json : last.markdown;
+  }));
+  $("out").querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", async () => {
+    const key = b.dataset.copy;
+    const text = key === "view" ? $("view").textContent : last[key];
+    try { await navigator.clipboard.writeText(text); b.textContent = "Скопировано"; }
+    catch { b.textContent = "Не удалось"; }
+    setTimeout(() => (b.textContent = key === "view" ? "Копировать всё" : "Копировать"), 1500);
+  }));
+}
+
+fetch("/api/examples").then((r) => r.json()).then((items) => {
+  const names = Object.keys(items);
+  if (!names.length) return;
+  $("examples-row").hidden = false;
+  names.forEach((name) => {
+    const b = document.createElement("button");
+    b.className = "btn small";
+    b.textContent = items[name].name || name;
+    b.addEventListener("click", () => {
+      if (mode === "json") $("f-json").value = JSON.stringify(items[name], null, 2);
+      else fillForm(items[name]);
+    });
+    $("examples-row").appendChild(b);
+  });
+}).catch(() => {});
+</script>
+</body>
+</html>

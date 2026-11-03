@@ -1,0 +1,12 @@
+[project]
+name = "card-gen"
+version = "0.1.0"
+description = "Черновики карточек товаров для B2B-магазина КИП с помощью LLM"
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["F", "E", "B", "I"]
+ignore = ["E501"]  # длинные строки только в текстах сообщений на русском

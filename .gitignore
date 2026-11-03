@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+# фид магазина большой (десятки МБ), скачивается скриптом
+feed.xml
+# исходный PDF задания не публикуем
+TASK.pdf
+.DS_Store
+.ruff_cache/
